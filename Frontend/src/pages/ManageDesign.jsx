@@ -40,13 +40,14 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 import apiRequest from "../utils/ApiRequest";
 
 /* ─── Design Form ────────────────────────────────────────────────── */
 const initialForm = { design_number: "", vepari_id: "", description: "", stitch_count: "", rate_per_1000: "", image_url: "", parts: [] };
 
-function DesignForm({ onSuccess, onCancel, activeFirm, editData = null, veparis, customParts = [], onPartAdded }) {
+function DesignForm({ onSuccess, onCancel, activeFirm, editData = null, isCopy = false, veparis, customParts = [], onPartAdded }) {
   const theme = useTheme();
   
   const availableParts = [...new Set(customParts || [])];
@@ -56,7 +57,16 @@ function DesignForm({ onSuccess, onCancel, activeFirm, editData = null, veparis,
 
   const [form, setForm] = useState(
     editData
-      ? { design_number: editData.design_number || "", vepari_id: editData.vepari_id?._id || editData.vepari_id || "", description: editData.description || "", stitch_count: editData.stitch_count || "", rate_per_1000: editData.rate_per_1000 || "", image_url: editData.image_url || "", is_active: editData.is_active ?? true, parts: editData.parts || [] }
+      ? { 
+          design_number: editData.design_number || "", 
+          vepari_id: isCopy ? "" : (editData.vepari_id?._id || editData.vepari_id || ""), 
+          description: editData.description || "", 
+          stitch_count: editData.stitch_count || "", 
+          rate_per_1000: editData.rate_per_1000 || "", 
+          image_url: editData.image_url || "", 
+          is_active: isCopy ? true : (editData.is_active ?? true), 
+          parts: editData.parts || [] 
+        }
       : initialForm
   );
   const [loading, setLoading] = useState(false);
@@ -141,7 +151,7 @@ function DesignForm({ onSuccess, onCancel, activeFirm, editData = null, veparis,
         parts: partsPayload,
         company_id: activeFirm?._id 
       };
-      const res = editData ? await apiRequest.put(`/design/${editData._id}`, payload) : await apiRequest.post("/design", payload);
+      const res = (editData && !isCopy) ? await apiRequest.put(`/design/${editData._id}`, payload) : await apiRequest.post("/design", payload);
       onSuccess(res.data.data);
     } catch (err) { setError(err?.response?.data?.message || err.message || "Something went wrong"); }
     finally { setLoading(false); }
@@ -250,7 +260,7 @@ function DesignForm({ onSuccess, onCancel, activeFirm, editData = null, veparis,
       <Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>
         <Button variant="outlined" fullWidth onClick={onCancel} sx={{ color: theme.palette.text.secondary, borderColor: theme.palette.divider }}>Cancel</Button>
         <Button variant="contained" fullWidth type="submit" disabled={loading}>
-          {loading ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : editData ? "Save Changes" : "Create Design"}
+          {loading ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : (editData && !isCopy) ? "Save Changes" : isCopy ? "Copy Design" : "Create Design"}
         </Button>
       </Box>
 
@@ -281,6 +291,7 @@ export default function ManageDesign() {
   const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editDesign, setEditDesign] = useState(null);
+  const [isCopy, setIsCopy] = useState(false);
   const [viewDesign, setViewDesign] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -351,7 +362,8 @@ export default function ManageDesign() {
                   <Chip label={d.is_active ? "Active" : "Inactive"} size="small" variant="tonal" color={d.is_active ? "success" : "error"} sx={{ mt: 0.5, height: 20, fontSize: "10px", fontWeight: 700 }} />
                 </Box>
                 <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
-                  <Tooltip title="Edit"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditDesign(d); }} sx={{ color: theme.palette.text.secondary, "&:hover": { color: theme.palette.primary.main } }}><EditOutlinedIcon sx={{ fontSize: 16 }} /></IconButton></Tooltip>
+                  <Tooltip title="Copy"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setIsCopy(true); setEditDesign(d); }} sx={{ color: theme.palette.text.secondary, "&:hover": { color: theme.palette.primary.main } }}><ContentCopyIcon sx={{ fontSize: 16 }} /></IconButton></Tooltip>
+                  <Tooltip title="Edit"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setIsCopy(false); setEditDesign(d); }} sx={{ color: theme.palette.text.secondary, "&:hover": { color: theme.palette.primary.main } }}><EditOutlinedIcon sx={{ fontSize: 16 }} /></IconButton></Tooltip>
                   <Tooltip title="Delete"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteTarget(d); }} sx={{ color: theme.palette.text.secondary, "&:hover": { color: "#EF4444" } }}><DeleteOutlineIcon sx={{ fontSize: 16 }} /></IconButton></Tooltip>
                 </Box>
               </Box>
@@ -365,22 +377,22 @@ export default function ManageDesign() {
         </Box>
       )}
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: "16px" } }}>
+      {/* Create / Copy Dialog */}
+      <Dialog open={createOpen || (Boolean(editDesign) && isCopy)} onClose={() => { setCreateOpen(false); setEditDesign(null); setIsCopy(false); }} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: "16px" } }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-          <Typography variant="subtitle1" color="text.primary">Add Design</Typography>
-          <IconButton size="small" onClick={() => setCreateOpen(false)} sx={{ color: theme.palette.text.secondary }}><CloseIcon fontSize="small" /></IconButton>
+          <Typography variant="subtitle1" color="text.primary">{isCopy ? "Copy Design" : "Add Design"}</Typography>
+          <IconButton size="small" onClick={() => { setCreateOpen(false); setEditDesign(null); setIsCopy(false); }} sx={{ color: theme.palette.text.secondary }}><CloseIcon fontSize="small" /></IconButton>
         </Box>
-        <DialogContent sx={{ p: 0 }}><DesignForm onSuccess={handleCreateSuccess} onCancel={() => setCreateOpen(false)} activeFirm={activeFirm} veparis={veparis} customParts={customParts} onPartAdded={(newPart) => setCustomParts(p => [...p, newPart])} /></DialogContent>
+        <DialogContent sx={{ p: 0 }}><DesignForm onSuccess={(newDesign) => { handleCreateSuccess(newDesign); setIsCopy(false); }} onCancel={() => { setCreateOpen(false); setEditDesign(null); setIsCopy(false); }} activeFirm={activeFirm} editData={isCopy ? editDesign : null} isCopy={isCopy} veparis={veparis} customParts={customParts} onPartAdded={(newPart) => setCustomParts(p => [...p, newPart])} /></DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={Boolean(editDesign)} onClose={() => setEditDesign(null)} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: "16px" } }}>
+      <Dialog open={Boolean(editDesign) && !isCopy} onClose={() => setEditDesign(null)} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: "16px" } }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="subtitle1" color="text.primary">Edit Design</Typography>
           <IconButton size="small" onClick={() => setEditDesign(null)} sx={{ color: theme.palette.text.secondary }}><CloseIcon fontSize="small" /></IconButton>
         </Box>
-        <DialogContent sx={{ p: 0 }}>{editDesign && <DesignForm onSuccess={handleEditSuccess} onCancel={() => setEditDesign(null)} activeFirm={activeFirm} editData={editDesign} veparis={veparis} customParts={customParts} onPartAdded={(newPart) => setCustomParts(p => [...p, newPart])} />}</DialogContent>
+        <DialogContent sx={{ p: 0 }}>{editDesign && <DesignForm onSuccess={handleEditSuccess} onCancel={() => setEditDesign(null)} activeFirm={activeFirm} editData={editDesign} isCopy={false} veparis={veparis} customParts={customParts} onPartAdded={(newPart) => setCustomParts(p => [...p, newPart])} />}</DialogContent>
       </Dialog>
 
       {/* Delete Confirm */}

@@ -46,10 +46,9 @@ const designSchema = new Schema(
   }
 );
 
-// Compound unique index: design_number is unique per company
-designSchema.index({ company_id: 1, design_number: 1 }, { unique: true });
+// Compound unique index: design_number is unique per vepari (party) within a company
 
-// ✅ CALCULATED VIRTUAL: total_design_value = (stitch_count / 1000) * rate_per_1000
+//  CALCULATED VIRTUAL: total_design_value = (stitch_count / 1000) * rate_per_1000
 designSchema.virtual("total_design_value").get(function () {
   if (this.parts && this.parts.length > 0) {
     let total = 0;
@@ -62,7 +61,8 @@ designSchema.virtual("total_design_value").get(function () {
   return Math.round(((this.stitch_count / 1000) * this.rate_per_1000) * 100) / 100;
 });
 
-// ✅ CALCULATED VIRTUAL: rate_per_piece (alias for single piece rate)
+
+//  CALCULATED VIRTUAL: rate_per_piece (alias for single piece rate)
 designSchema.virtual("rate_per_piece").get(function () {
   if (this.parts && this.parts.length > 0) {
     let total = 0;

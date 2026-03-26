@@ -103,7 +103,7 @@ const jobCardSchema = new Schema(
 // Compound unique index: job_card_number unique per company
 jobCardSchema.index({ company_id: 1, job_card_number: 1 }, { unique: true });
 
-// ✅ CALCULATED VIRTUAL: pending_pieces = inward - outward
+//  CALCULATED VIRTUAL: pending_pieces = inward - outward
 jobCardSchema.virtual("pending_pieces").get(function () {
   return this.inward_pieces - this.outward_pieces;
 });

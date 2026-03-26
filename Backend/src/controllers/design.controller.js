@@ -49,7 +49,7 @@ export const createDesign = async (req, res) => {
       return res.status(error.statusCode).json({ message: error.message, success: false });
     }
     if (error.code === 11000) {
-      return res.status(409).json({ message: "A design with this number already exists for this company", success: false });
+      return res.status(409).json({ message: "A design with this number already exists for this party", success: false });
     }
     if (error.name === "ValidationError") {
       const messages = Object.values(error.errors).map((e) => e.message).join(", ");
@@ -103,9 +103,15 @@ export const editDesign = async (req, res) => {
       if (!vepari) throw new ApiError(404, "Vepari not found or doesn't belong to this company");
     }
 
-    if (design_number && design_number.toUpperCase() !== design.design_number) {
-      const duplicate = await Design.findOne({ _id: { $ne: id }, company_id: companyId, design_number: design_number.toUpperCase() });
-      if (duplicate) throw new ApiError(409, "A design with this number already exists for this company");
+    if (design_number && (design_number.toUpperCase() !== design.design_number || (vepari_id && vepari_id !== String(design.vepari_id)))) {
+      const checkVepariId = vepari_id || design.vepari_id;
+      const duplicate = await Design.findOne({ 
+        _id: { $ne: id }, 
+        company_id: companyId, 
+        vepari_id: checkVepariId,
+        design_number: design_number.toUpperCase() 
+      });
+      if (duplicate) throw new ApiError(409, "A design with this number already exists for this party");
     }
 
     const updated = await Design.findByIdAndUpdate(
@@ -129,7 +135,7 @@ export const editDesign = async (req, res) => {
       return res.status(error.statusCode).json({ message: error.message, success: false });
     }
     if (error.code === 11000) {
-      return res.status(409).json({ message: "A design with this number already exists for this company", success: false });
+      return res.status(409).json({ message: "A design with this number already exists for this party", success: false });
     }
     if (error.name === "ValidationError") {
       const messages = Object.values(error.errors).map((e) => e.message).join(", ");
