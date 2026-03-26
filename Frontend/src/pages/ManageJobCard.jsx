@@ -45,11 +45,37 @@ function StatusChip({ status }) {
 }
 
 /* ─── Job Card Form ──────────────────────────────────────────────── */
-function JobCardForm({ onSuccess, onCancel, activeFirm, firms, veparis, designs, brokers }) {
+function JobCardForm({ onSuccess, onCancel, activeFirm, firms, veparis, brokers }) {
   const theme = useTheme();
   const [form, setForm] = useState({ company_id: activeFirm?._id || "", vepari_id: "", design_id: "", broker_id: "", total_pieces: "", notes: "" });
+  const [availableDesigns, setAvailableDesigns] = useState([]);
+  const [fetchingDesigns, setFetchingDesigns] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (form.vepari_id) {
+      const fetchDesigns = async () => {
+        setFetchingDesigns(true);
+        try {
+          const res = await apiRequest.get("/design", { params: { company_id: form.company_id, vepari_id: form.vepari_id, limit: 100 } });
+          setAvailableDesigns(res.data.data || []);
+          // Reset design_id if current one not in new list
+          if (form.design_id && !res.data.data?.find(d => d._id === form.design_id)) {
+            setForm(prev => ({ ...prev, design_id: "" }));
+          }
+        } catch (err) {
+          console.error("Failed to fetch designs", err);
+        } finally {
+          setFetchingDesigns(false);
+        }
+      };
+      fetchDesigns();
+    } else {
+      setAvailableDesigns([]);
+      setForm(prev => ({ ...prev, design_id: "" }));
+    }
+  }, [form.vepari_id, form.company_id]);
 
   const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
@@ -78,8 +104,11 @@ function JobCardForm({ onSuccess, onCancel, activeFirm, firms, veparis, designs,
         {veparis.map((v) => <MenuItem key={v._id} value={v._id}>{v.name} {v.company_name ? `(${v.company_name})` : ""}</MenuItem>)}
       </TextField>
 
-      <TextField select label="Design" name="design_id" value={form.design_id} onChange={handleChange} required fullWidth size="small">
-        {designs.map((d) => <MenuItem key={d._id} value={d._id}>{d.design_number} — {d.stitch_count} stitches</MenuItem>)}
+      <TextField select label="Design" name="design_id" value={form.design_id} onChange={handleChange} required fullWidth size="small"
+        disabled={!form.vepari_id || fetchingDesigns}
+        helperText={!form.vepari_id ? "Select a party first" : fetchingDesigns ? "Loading designs..." : ""}
+      >
+        {availableDesigns.map((d) => <MenuItem key={d._id} value={d._id}>{d.design_number} — {d.stitch_count} stitches</MenuItem>)}
       </TextField>
 
       <TextField select label="Broker (Optional)" name="broker_id" value={form.broker_id} onChange={handleChange} fullWidth size="small">
@@ -156,7 +185,7 @@ function LogChallanForm({ type, jobCard, onSuccess, onCancel, activeFirm, firms 
 }
 
 /* ─── Edit Job Card Form ─────────────────────────────────────────── */
-function EditJobCardForm({ jobCard, onSuccess, onCancel, activeFirm, firms, veparis, designs, brokers }) {
+function EditJobCardForm({ jobCard, onSuccess, onCancel, activeFirm, firms, veparis, brokers }) {
   const theme = useTheme();
   const [form, setForm] = useState({
     company_id: jobCard.company_id?._id || activeFirm?._id || "",
@@ -166,8 +195,34 @@ function EditJobCardForm({ jobCard, onSuccess, onCancel, activeFirm, firms, vepa
     total_pieces: jobCard.total_pieces || "",
     notes: jobCard.notes || "",
   });
+  const [availableDesigns, setAvailableDesigns] = useState([]);
+  const [fetchingDesigns, setFetchingDesigns] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (form.vepari_id) {
+      const fetchDesigns = async () => {
+        setFetchingDesigns(true);
+        try {
+          const res = await apiRequest.get("/design", { params: { company_id: form.company_id, vepari_id: form.vepari_id, limit: 100 } });
+          setAvailableDesigns(res.data.data || []);
+          // Reset design_id if current one not in new list
+          if (form.design_id && !res.data.data?.find(d => d._id === form.design_id)) {
+            setForm(prev => ({ ...prev, design_id: "" }));
+          }
+        } catch (err) {
+          console.error("Failed to fetch designs", err);
+        } finally {
+          setFetchingDesigns(false);
+        }
+      };
+      fetchDesigns();
+    } else {
+      setAvailableDesigns([]);
+      setForm(prev => ({ ...prev, design_id: "" }));
+    }
+  }, [form.vepari_id, form.company_id]);
 
   const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
@@ -196,8 +251,11 @@ function EditJobCardForm({ jobCard, onSuccess, onCancel, activeFirm, firms, vepa
         {veparis.map((v) => <MenuItem key={v._id} value={v._id}>{v.name} {v.company_name ? `(${v.company_name})` : ""}</MenuItem>)}
       </TextField>
 
-      <TextField select label="Design" name="design_id" value={form.design_id} onChange={handleChange} required fullWidth size="small">
-        {designs.map((d) => <MenuItem key={d._id} value={d._id}>{d.design_number} — {d.stitch_count} stitches</MenuItem>)}
+      <TextField select label="Design" name="design_id" value={form.design_id} onChange={handleChange} required fullWidth size="small"
+        disabled={!form.vepari_id || fetchingDesigns}
+        helperText={!form.vepari_id ? "Select a party first" : fetchingDesigns ? "Loading designs..." : ""}
+      >
+        {availableDesigns.map((d) => <MenuItem key={d._id} value={d._id}>{d.design_number} — {d.stitch_count} stitches</MenuItem>)}
       </TextField>
 
       <TextField select label="Broker (Optional)" name="broker_id" value={form.broker_id} onChange={handleChange} fullWidth size="small">
@@ -271,7 +329,6 @@ function EditChallanForm({ challan, firms, onSuccess, onCancel }) {
 export default function ManageJobCard() {
   const [jobCards, setJobCards] = useState([]);
   const [veparis, setVeparis] = useState([]);
-  const [designs, setDesigns] = useState([]);
   const [brokers, setBrokers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -299,10 +356,9 @@ export default function ManageJobCard() {
       try { const res = await apiRequest.get(url, customParams || p); return res.data?.data || null; }
       catch { return null; }
     };
-    const [jc, v, d, b] = await Promise.all([fetchSafe("/jobcard", p), fetchSafe("/vepari"), fetchSafe("/design"), fetchSafe("/broker")]);
+    const [jc, v, b] = await Promise.all([fetchSafe("/jobcard", p), fetchSafe("/vepari"), fetchSafe("/broker")]);
     setJobCards(jc?.data || []);
     setVeparis(v || []);
-    setDesigns(d || []);
     setBrokers(b || []);
     setLoading(false);
   };
@@ -457,7 +513,7 @@ export default function ManageJobCard() {
           <IconButton size="small" onClick={() => setCreateOpen(false)} sx={{ color: theme.palette.text.secondary }}><CloseIcon fontSize="small" /></IconButton>
         </Box>
         <DialogContent sx={{ p: 0 }}>
-          <JobCardForm onSuccess={handleCreateSuccess} onCancel={() => setCreateOpen(false)} activeFirm={activeFirm} firms={firms} veparis={veparis} designs={designs} brokers={brokers} />
+          <JobCardForm onSuccess={handleCreateSuccess} onCancel={() => setCreateOpen(false)} activeFirm={activeFirm} firms={firms} veparis={veparis} brokers={brokers} />
         </DialogContent>
       </Dialog>
 
@@ -558,7 +614,7 @@ export default function ManageJobCard() {
           <IconButton size="small" onClick={() => setEditModal(null)} sx={{ color: theme.palette.text.secondary }}><CloseIcon fontSize="small" /></IconButton>
         </Box>
         <DialogContent sx={{ p: 0 }}>
-          {editModal && <EditJobCardForm jobCard={editModal} onSuccess={handleEditSuccess} onCancel={() => setEditModal(null)} activeFirm={activeFirm} firms={firms} veparis={veparis} designs={designs} brokers={brokers} />}
+          {editModal && <EditJobCardForm jobCard={editModal} onSuccess={handleEditSuccess} onCancel={() => setEditModal(null)} activeFirm={activeFirm} firms={firms} veparis={veparis} brokers={brokers} />}
         </DialogContent>
       </Dialog>
 
