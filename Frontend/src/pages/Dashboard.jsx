@@ -22,6 +22,9 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import PrecisionManufacturingIcon from "@mui/icons-material/PrecisionManufacturing";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
@@ -38,6 +41,9 @@ const navItems = [
   { label: "Designs", icon: BrushOutlinedIcon, path: "/dashboard/design" },
   { label: "Job Cards", icon: AssignmentOutlinedIcon, path: "/dashboard/jobcard" },
   { label: "Challans", icon: DescriptionOutlinedIcon, path: "/dashboard/challans" },
+  { label: "Machines", icon: PrecisionManufacturingIcon, path: "/dashboard/machine" },
+  { label: "Employees", icon: BadgeOutlinedIcon, path: "/dashboard/employee" },
+  { label: "Production", icon: AssignmentTurnedInOutlinedIcon, path: "/dashboard/production" },
   { label: "Reports", icon: AssessmentOutlinedIcon, path: "/dashboard/reports" },
 ];
 

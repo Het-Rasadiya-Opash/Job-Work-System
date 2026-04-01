@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import apiRequest from "../utils/ApiRequest";
 
 const AuthContext = createContext({});
@@ -8,6 +9,31 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [activeFirm, setActiveFirm] = useState(null);
   const [firms, setFirms] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Interceptor to handle automatic logout on token expiry
+    const interceptor = apiRequest.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (
+          error.response &&
+          error.response.status === 401 &&
+          error.config &&
+          !error.config.url.includes("/user/signin") &&
+          !error.config.url.includes("/user/signup")
+        ) {
+          setUser(null);
+          navigate("/auth");
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      apiRequest.interceptors.response.eject(interceptor);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     apiRequest

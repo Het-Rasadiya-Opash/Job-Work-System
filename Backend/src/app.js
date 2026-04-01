@@ -13,6 +13,9 @@ import jobcardRouter from "./routes/jobcard.route.js";
 import dashboardRouter from "./routes/dashboard.route.js";
 import reportRouter from "./routes/report.route.js";
 import challanRouter from "./routes/challan.route.js";
+import machineRouter from "./routes/machine.route.js";
+import employeeRouter from "./routes/employee.route.js";
+import productionRouter from "./routes/production.route.js";
 import errorHandler from "./middlewares/error.middleware.js";
 
 const app = express();
@@ -38,7 +41,9 @@ app.use('/api/jobcard', jobcardRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/report', reportRouter);
 app.use('/api/challan', challanRouter);
-
+app.use('/api/machine', machineRouter);
+app.use('/api/employee', employeeRouter);
+app.use('/api/production', productionRouter);
 app.use(errorHandler);
 
 app.listen(process.env.PORT, () => {

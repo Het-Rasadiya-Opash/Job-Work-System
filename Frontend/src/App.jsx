@@ -12,7 +12,9 @@ import ManageBroker from "./pages/ManageBroker";
 import ReportPage from "./pages/ReportPage";
 import ChallanPrint from "./components/ChallanPrint";
 import ManageChallan from "./pages/ManageChallan";
-
+import ManageMachine from "./pages/ManageMachine";
+import ManageEmployee from "./pages/ManageEmployee";
+import ManageProduction from "./pages/ManageProduction";
 const App = () => {
   return (
     <Routes>
@@ -34,6 +36,9 @@ const App = () => {
         <Route path="design" element={<ManageDesign />} />
         <Route path="jobcard" element={<ManageJobCard />} />
         <Route path="challans" element={<ManageChallan />} />
+        <Route path="machine" element={<ManageMachine />} />
+        <Route path="employee" element={<ManageEmployee />} />
+        <Route path="production" element={<ManageProduction />} />
         <Route path="reports" element={<ReportPage />} />
       </Route>
 
